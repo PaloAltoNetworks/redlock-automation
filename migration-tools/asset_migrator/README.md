@@ -1,10 +1,10 @@
-Asset Migrator Tool for Redlock.io
+<h2>Asset Migrator Tool for Redlock.io</h2>
 
 Migrate Evident's Team, User, Disabled Signatures, and Regional Suppression Rules to RedLock.
 
 Requires Python 3
 
-**Instructions:**
+<h3>Instructions:</h3>
 
 Modify the configuration within the script:
 
