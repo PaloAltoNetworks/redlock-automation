@@ -4,11 +4,12 @@ This tool is an automation tool for onboarding AWS accounts onto Redlock.io.  Th
 
 Installation Requires Python3 and several python packages installable via pip. https://pypi.org/project/pip/
 
+```
 pip3 install boto3
 pip3 install requests
 pip3 sty
 pip3 install argparse
-
+```
 
 
 ```
