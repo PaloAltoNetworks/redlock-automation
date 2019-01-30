@@ -13,10 +13,9 @@ pip3 install argparse
 
 
 ```
-
 usage: Redlock Onboarding Tool [-h] [-a AWSPROFILE] [-f] [-c] [-u USERNAME]
                                [-p PASSWORD] [-o CUSTOMERNAME]
-                               [-n ACCOUNTNAME]
+                               [-n ACCOUNTNAME] [-t TENANT]
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -30,7 +29,11 @@ optional arguments:
   -p PASSWORD, --password PASSWORD
                         Redlock.io password
   -o CUSTOMERNAME, --customername CUSTOMERNAME
-                        Redlock.io organization/tenant name
+                        Redlock.io organization name. Please ensure you Escape
+                        any spaces by enclosing the name in quotes eg,
+                        "Redlock Account"
   -n ACCOUNTNAME, --accountname ACCOUNTNAME
                         Name for account within Redlock.io
+  -t TENANT, --tenant TENANT
+                        Your Redlock.io tenant. vailable options, app or app2.
 ```

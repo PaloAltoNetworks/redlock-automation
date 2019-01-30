@@ -53,7 +53,7 @@ parser.add_argument(
     '--customername',
     type=str,
     default=None,
-    help='Redlock.io organization/tenant name')
+    help='Redlock.io organization name. Please ensure you Escape any spaces by enclosing the name in quotes eg, "Redlock Account"')
 
 parser.add_argument(
     '-n',
@@ -61,6 +61,13 @@ parser.add_argument(
     type=str,
     default=None,
     help='Name for account within Redlock.io')
+
+parser.add_argument(
+    '-t',
+    '--tenant',
+    type=str,
+    default=None,
+    help='Your Redlock.io tenant. vailable options, app or app2.')
 
 args = parser.parse_args()
 profile = args.awsprofile
@@ -215,7 +222,7 @@ def launch_cloudformation_stack(account_information):
     return
 
 def get_auth_token(globalVars):
-    url = "https://api.redlock.io/login"
+    url = "https://%s.redlock.io/login" % (arg.tenant)
     headers = {'Content-Type': 'application/json'}
     payload = json.dumps(globalVars)
     response = requests.request("POST", url, headers=headers, data=payload)
@@ -223,7 +230,7 @@ def get_auth_token(globalVars):
     return token
 
 def call_redlock_api(auth_token, action, endpoint, payload):
-    url = "https://api.redlock.io/" + endpoint
+    url = "https://%s.redlock.io/" %s (arg.tenant) + endpoint
     headers = {'Content-Type': 'application/json', 'x-redlock-auth': auth_token}
     payload = json.dumps(payload)
     response = requests.request(action, url, headers=headers, data=payload)
