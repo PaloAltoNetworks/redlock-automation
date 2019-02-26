@@ -8,7 +8,7 @@ import logging
 import pip
 import sty
 import argparse
-from sty import fg, bg, ef, rs, Rule
+from sty import fg, bg, ef, rs
 import botocore
 from botocore.exceptions import ClientError
                                   
