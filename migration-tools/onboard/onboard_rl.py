@@ -230,7 +230,7 @@ def get_auth_token(globalVars):
     return token
 
 def call_redlock_api(auth_token, action, endpoint, payload):
-    url = "https://%s.redlock.io/" %s (arg.tenant) + endpoint
+    url = "https://%s.redlock.io/" % (arg.tenant) + endpoint
     headers = {'Content-Type': 'application/json', 'x-redlock-auth': auth_token}
     payload = json.dumps(payload)
     response = requests.request(action, url, headers=headers, data=payload)
