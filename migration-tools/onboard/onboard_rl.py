@@ -222,7 +222,7 @@ def launch_cloudformation_stack(account_information):
     return
 
 def get_auth_token(globalVars):
-    url = "https://%s.redlock.io/login" % (arg.tenant)
+    url = "https://%s.redlock.io/login" % (args.tenant)
     headers = {'Content-Type': 'application/json'}
     payload = json.dumps(globalVars)
     response = requests.request("POST", url, headers=headers, data=payload)
@@ -230,7 +230,7 @@ def get_auth_token(globalVars):
     return token
 
 def call_redlock_api(auth_token, action, endpoint, payload):
-    url = "https://%s.redlock.io/" % (arg.tenant) + endpoint
+    url = "https://%s.redlock.io/" % (args.tenant) + endpoint
     headers = {'Content-Type': 'application/json', 'x-redlock-auth': auth_token}
     payload = json.dumps(payload)
     response = requests.request(action, url, headers=headers, data=payload)
