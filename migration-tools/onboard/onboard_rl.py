@@ -76,6 +76,7 @@ iamRole=None
 flowLogsPermPolicy=None
 multitrails = {}
 multiAlltrails = {}
+tenant = None
 
 session = boto3.Session(profile_name=profile)
 iamClient   = session.client   ( 'iam')
@@ -94,7 +95,10 @@ globalVars['customerName']          = args.customername
 globalVars['accountname']           = args.accountname
 
 
-
+if args.tenant=="app":
+  tenant="api"
+elif args.tenant=="app2":
+  tenant="api2"
 
 ### Create IAM Role
 flowLogsTrustPolicy = """{
@@ -222,7 +226,7 @@ def launch_cloudformation_stack(account_information):
     return
 
 def get_auth_token(globalVars):
-    url = "https://%s.redlock.io/login" % (args.tenant)
+    url = "https://%s.redlock.io/login" % (tenant)
     headers = {'Content-Type': 'application/json'}
     payload = json.dumps(globalVars)
     response = requests.request("POST", url, headers=headers, data=payload)
@@ -230,7 +234,7 @@ def get_auth_token(globalVars):
     return token
 
 def call_redlock_api(auth_token, action, endpoint, payload):
-    url = "https://%s.redlock.io/" % (args.tenant) + endpoint
+    url = "https://%s.redlock.io/" % tenant + endpoint
     headers = {'Content-Type': 'application/json', 'x-redlock-auth': auth_token}
     payload = json.dumps(payload)
     response = requests.request(action, url, headers=headers, data=payload)
