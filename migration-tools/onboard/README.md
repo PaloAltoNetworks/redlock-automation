@@ -27,7 +27,7 @@ optional arguments:
   -u USERNAME, --username USERNAME
                         Redlock.io username
   -p PASSWORD, --password PASSWORD
-                        Redlock.io password
+                        Redlock.io password (any password with special characters should be escaped with single quotes)
   -o CUSTOMERNAME, --customername CUSTOMERNAME
                         Redlock.io organization name. Please ensure you Escape
                         any spaces by enclosing the name in quotes eg,
