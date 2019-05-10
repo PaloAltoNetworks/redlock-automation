@@ -102,7 +102,7 @@ stats = {
 
 redlock_token = ''
 token_created_at = None
-version = '1.6'
+version = '1.6a'
 
 global_signature_ids = [
     '7', '3', '4', '5', '6', '10', '79', '80', '81', '66', '67', '138', '136', '139', '174',
@@ -129,6 +129,7 @@ signature_policy_mapping = {
         '21': ['ee7ba0f4-904b-4dfa-9a04-9344b40cba69'],
         '23': ['0dda2afe-82df-4ba5-9664-a5ba23da9754',
             '606e3f5f-52ad-4cd5-b944-11f34c7c7379'],
+        '27': ['f2b80edb-79d3-4842-b86a-3bbbcfd95c98'],
         '28': ['bc6fafc0-c5f8-4ddd-b07d-0e4394c06ad0'],
         '31': ['e2a025f5-d9d1-49ae-9eca-320f8da01b60', '2066c4ed-70ad-420e-acd6-a7d6df0797eb'],
         '34': ['617b9138-584b-4e8e-ad15-7fbabafbed1a'],
@@ -167,7 +168,6 @@ signature_policy_mapping = {
         '86': ['cc911950-a215-4dfb-ba84-0481c36c74c8'],
         '87': ['ed8d6416-1064-4e78-9e34-02336894df44'],
         '93': ['43c42760-5283-4bc4-ac43-a80e58c4139f'],
-        '95': ['67dc23e7-e6db-4efb-b7e8-b4bd7778c891'],
         '96': ['2bfc9a1e-bbad-4778-8116-99d07f1d2ba5'],
         '97': ['4daa435b-fa46-457a-9359-6a4b4a43a442'],
         '100': ['34fa9efb-d18f-41e4-b93f-2f7e5378752c'],
@@ -325,6 +325,7 @@ rl_region_codes = [
     'ap-southeast-2', 
     'ap-northeast-1', 
     'us-east-1', 
+    'eu-north-1',
     'australiacentral', 
     'australiacentral2', 
     'australiaeast', 
