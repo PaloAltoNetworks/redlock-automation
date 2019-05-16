@@ -317,6 +317,11 @@ def create_iam():
   except ClientError as e:
     if e.response['Error']['Code'] == 'EntityAlreadyExists':
       print('Role Already Exists...')
+      iamRole = {
+          'Role': {
+              'Arn': 'arn:aws:iam::%s:role/%s' % (account_id, globalVars['IAM-RoleName'])
+          }
+      }
 
 
   #### Attach permissions to the role
