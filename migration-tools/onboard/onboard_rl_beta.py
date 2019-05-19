@@ -142,18 +142,18 @@ S3BucketPolicy ="""{
             "Effect": "Allow",
             "Principal": {"Service": "cloudtrail.amazonaws.com"},
             "Action": "s3:GetBucketAcl",
-            "Resource": "arn:aws:s3:::redlocktrails3"
+            "Resource": "arn:aws:s3:::redlocktrails-%s"
         },
         {
             "Sid": "AWSCloudTrailWrite20150319",
             "Effect": "Allow",
             "Principal": {"Service": "cloudtrail.amazonaws.com"},
             "Action": "s3:PutObject",
-            "Resource": "arn:aws:s3:::redlocktrails3/AWSLogs/%s/*",
+            "Resource": "arn:aws:s3:::redlocktrails-%s/AWSLogs/%s/*",
             "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}
         }
     ]
-}""" % (account_id)
+}""" % (account_id, account_id, account_id)
 
 
 def main(globalVars):
@@ -164,7 +164,7 @@ def main(globalVars):
     )
     account_information = create_account_information(globalVars['accountname'])
     launch_cloudformation_stack(account_information)
-    #response = register_account_with_redlock(globalVars, account_information)
+    response = register_account_with_redlock(globalVars, account_information)
     if args.vpcflowlogs==True:
       setupvpc(globalVars)
     if args.cloudtrail==True:
@@ -264,22 +264,37 @@ def register_account_with_redlock(globalVars, account_information):
 def create_trail():
     print("creating S3Bucket for CloudTrail")
     s3Client    = session.client   ( 's3')
-    response = s3Client.create_bucket(
-      ACL="private",
-      Bucket="redlocktrails3"
-    )
-    response = s3Client.put_bucket_policy(
-      Bucket="redlocktrails3",
-      Policy=S3BucketPolicy
-    )
-    print("creating CloudTrail")
-    response = ctClient.create_trail(
-      Name="RedlockTrail",
-      S3BucketName="redlocktrails3",
-      IsOrganizationTrail=False,
-      IsMultiRegionTrail=True,
-      IncludeGlobalServiceEvents=True
+    try:
+      response = s3Client.create_bucket(
+        ACL="private",
+        Bucket=("redlocktrails-%s" % account_id),
+        CreateBucketConfiguration={'LocationConstraint': session.region_name}
       )
+    except ClientError as e:
+      if e.response['Error']['Code'] == 'BucketAlreadyExists' or e.response['Error']['Code'] == 'BucketAlreadyOwnedByYou' :
+        print('Bucket Already Exists... Continuing')
+      else:
+        print(e.response)
+
+    response = s3Client.put_bucket_policy(
+      Bucket=("redlocktrails-%s" % account_id),
+      Policy=S3BucketPolicy,
+    )
+
+    print("creating CloudTrail")
+    try:   
+      response = ctClient.create_trail(
+        Name="RedlockTrail",
+        S3BucketName=("redlocktrails-%s" % account_id),
+        IsOrganizationTrail=False,
+        IsMultiRegionTrail=True,
+        IncludeGlobalServiceEvents=True
+        )
+    except ClientError as e:
+      if e.response['Error']['Code'] == 'TrailAlreadyExistsException':
+        print('Trail Already Exists... Continuing')
+      else:
+        print(e.response)
 
 
 
@@ -287,6 +302,7 @@ def create_trail():
 def is_cloudtrail_enabled():
   ctenabled=False
   response = ctClient.describe_trails()
+  '''
   if len(response['trailList']) != 0:
     for each in response['trailList']:
       if each[u'IsMultiRegionTrail']==True:
@@ -300,8 +316,9 @@ def is_cloudtrail_enabled():
           ctenabled=True
           break
   else:
-    create_trail()
-    ctenabled=True
+  '''
+  create_trail()
+  ctenabled=True
 
   if ctenabled==False:
     create_trail()
