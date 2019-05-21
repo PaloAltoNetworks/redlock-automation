@@ -265,11 +265,18 @@ def create_trail():
     print("creating S3Bucket for CloudTrail")
     s3Client    = session.client   ( 's3')
     try:
-      response = s3Client.create_bucket(
-        ACL="private",
-        Bucket=("redlocktrails-%s" % account_id),
-        CreateBucketConfiguration={'LocationConstraint': session.region_name}
-      )
+      if session.region_name == 'us-east-1':
+        response = s3Client.create_bucket(
+          ACL="private",
+          Bucket=("redlocktrails-%s" % account_id)
+        )
+      else:
+        response = s3Client.create_bucket(
+          ACL="private",
+          Bucket=("redlocktrails-%s" % account_id),
+          CreateBucketConfiguration={'LocationConstraint': session.region_name}
+        )
+    
     except ClientError as e:
       if e.response['Error']['Code'] == 'BucketAlreadyExists' or e.response['Error']['Code'] == 'BucketAlreadyOwnedByYou' :
         print('Bucket Already Exists... Continuing')
