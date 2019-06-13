@@ -142,18 +142,18 @@ S3BucketPolicy ="""{
             "Effect": "Allow",
             "Principal": {"Service": "cloudtrail.amazonaws.com"},
             "Action": "s3:GetBucketAcl",
-            "Resource": "arn:aws:s3:::redlocktrails3"
+            "Resource": "arn:aws:s3:::redlocktrails-%s"
         },
         {
             "Sid": "AWSCloudTrailWrite20150319",
             "Effect": "Allow",
             "Principal": {"Service": "cloudtrail.amazonaws.com"},
             "Action": "s3:PutObject",
-            "Resource": "arn:aws:s3:::redlocktrails3/AWSLogs/%s/*",
+            "Resource": "arn:aws:s3:::redlocktrails-%s/AWSLogs/%s/*",
             "Condition": {"StringEquals": {"s3:x-amz-acl": "bucket-owner-full-control"}}
         }
     ]
-}""" % (account_id)
+}""" % (account_id, account_id, account_id)
 
 
 def main(globalVars):
@@ -193,36 +193,42 @@ def launch_cloudformation_stack(account_information):
     cfn_client = session.client('cloudformation')
     template_url = "https://s3.amazonaws.com/redlock-public/cft/rl-read-only.template"
     logging.info("Beginning creation of IAM Service Role for AWS account: " + account_information['account_id'])
-    response = cfn_client.create_stack(
-        StackName='Redlock-Service-Role-Stack',
-        TemplateURL=template_url,
-        Parameters=[
-            {
-                'ParameterKey': 'RedlockRoleARN',
-                'ParameterValue': 'Redlock-Service-Role', 
-            },
-            {
-                'ParameterKey': 'ExternalID',
-                'ParameterValue': account_information['external_id']
-            }
-        ], 
-        Capabilities=['CAPABILITY_NAMED_IAM'],
-        OnFailure='DELETE',
-        Tags=[]
-    )
-    stack_id = response['StackId']
-    stack_status = None
-    while stack_status != 'CREATE_COMPLETE':
-        time.sleep(3)
-        stack_info = cfn_client.describe_stacks(StackName=stack_id)['Stacks'][0]
-        stack_status = stack_info['StackStatus']
-        # Poll to see if stack is finished creating
-        if stack_info in ['CREATE_FAILED', 'ROLLBACK_COMPLETE', 'DELETE_COMPLETE']:
-            exit("Stack {} Creation Failed ".format(stack_status))
-        elif stack_status == 'CREATE_COMPLETE':
-            logging.info("Redlock Service Role has been created in AWS account: " + account_information['account_id'])
-        else:
-            logging.info("Building Redlock Service Role. Current Status: {}".format(stack_status))
+    try:
+        response = cfn_client.create_stack(
+            StackName='Redlock-Service-Role-Stack',
+            TemplateURL=template_url,
+            Parameters=[
+                {
+                    'ParameterKey': 'RedlockRoleARN',
+                    'ParameterValue': 'Redlock-Service-Role', 
+                },
+                {
+                    'ParameterKey': 'ExternalID',
+                    'ParameterValue': account_information['external_id']
+                }
+            ], 
+            Capabilities=['CAPABILITY_NAMED_IAM'],
+            OnFailure='DELETE',
+            Tags=[]
+        )
+
+        stack_id = response['StackId']
+        stack_status = None
+        while stack_status != 'CREATE_COMPLETE':
+            time.sleep(3)
+            stack_info = cfn_client.describe_stacks(StackName=stack_id)['Stacks'][0]
+            stack_status = stack_info['StackStatus']
+            # Poll to see if stack is finished creating
+            if stack_info in ['CREATE_FAILED', 'ROLLBACK_COMPLETE', 'DELETE_COMPLETE']:
+                exit("Stack {} Creation Failed ".format(stack_status))
+            elif stack_status == 'CREATE_COMPLETE':
+                logging.info("Redlock Service Role has been created in AWS account: " + account_information['account_id'])
+            else:
+                logging.info("Building Redlock Service Role. Current Status: {}".format(stack_status))
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'AlreadyExists':
+            print(fg.red + 'Stack Already Exists...Continuing' + fg.rs)
+
     return
 
 def get_auth_token(globalVars):
@@ -258,22 +264,44 @@ def register_account_with_redlock(globalVars, account_information):
 def create_trail():
     print("creating S3Bucket for CloudTrail")
     s3Client    = session.client   ( 's3')
-    response = s3Client.create_bucket(
-      ACL="private",
-      Bucket="redlocktrails3"
-    )
+    try:
+      if session.region_name == 'us-east-1':
+        response = s3Client.create_bucket(
+          ACL="private",
+          Bucket=("redlocktrails-%s" % account_id)
+        )
+      else:
+        response = s3Client.create_bucket(
+          ACL="private",
+          Bucket=("redlocktrails-%s" % account_id),
+          CreateBucketConfiguration={'LocationConstraint': session.region_name}
+        )
+    
+    except ClientError as e:
+      if e.response['Error']['Code'] == 'BucketAlreadyExists' or e.response['Error']['Code'] == 'BucketAlreadyOwnedByYou' :
+        print('Bucket Already Exists... Continuing')
+      else:
+        print(e.response)
+
     response = s3Client.put_bucket_policy(
-      Bucket="redlocktrails3",
-      Policy=S3BucketPolicy
+      Bucket=("redlocktrails-%s" % account_id),
+      Policy=S3BucketPolicy,
     )
+
     print("creating CloudTrail")
-    response = ctClient.create_trail(
-      Name="RedlockTrail",
-      S3BucketName="redlocktrails3",
-      IsOrganizationTrail=False,
-      IsMultiRegionTrail=True,
-      IncludeGlobalServiceEvents=True
-      )
+    try:   
+      response = ctClient.create_trail(
+        Name="RedlockTrail",
+        S3BucketName=("redlocktrails-%s" % account_id),
+        IsOrganizationTrail=False,
+        IsMultiRegionTrail=True,
+        IncludeGlobalServiceEvents=True
+        )
+    except ClientError as e:
+      if e.response['Error']['Code'] == 'TrailAlreadyExistsException':
+        print('Trail Already Exists... Continuing')
+      else:
+        print(e.response)
 
 
 
@@ -281,6 +309,7 @@ def create_trail():
 def is_cloudtrail_enabled():
   ctenabled=False
   response = ctClient.describe_trails()
+  '''
   if len(response['trailList']) != 0:
     for each in response['trailList']:
       if each[u'IsMultiRegionTrail']==True:
@@ -294,8 +323,9 @@ def is_cloudtrail_enabled():
           ctenabled=True
           break
   else:
-    create_trail()
-    ctenabled=True
+  '''
+  create_trail()
+  ctenabled=True
 
   if ctenabled==False:
     create_trail()
@@ -311,6 +341,11 @@ def create_iam():
   except ClientError as e:
     if e.response['Error']['Code'] == 'EntityAlreadyExists':
       print('Role Already Exists...')
+      iamRole = {
+          'Role': {
+              'Arn': 'arn:aws:iam::%s:role/%s' % (account_id, globalVars['IAM-RoleName'])
+          }
+      }
 
 
   #### Attach permissions to the role
@@ -325,6 +360,11 @@ def create_iam():
   except ClientError as e:
     if e.response['Error']['Code'] == 'EntityAlreadyExists':
       print(fg.red + 'Policy Already Exists...Continuing' + fg.rs)
+      flowLogsPermPolicy = {
+          'Policy': {
+              'Arn': 'arn:aws:iam::%s:policy/flowLogsPermissions' % account_id
+          }
+      }
 
 
 
